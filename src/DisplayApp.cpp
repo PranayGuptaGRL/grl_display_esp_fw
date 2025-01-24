@@ -6,14 +6,16 @@ LGFX lcd;
 #include "callbacks.h"
 #include "grl_apis.h"
 int dbg = 0;
+// lv_obj_t * tap3_panel1_tittle1;
+// lv_obj_t * op_panel;
 // lv_obj_t * GrlMainTab;
 // lv_obj_t * OverViewTab;
 // lv_obj_t * AnalysisTab;
+
 #if !LV_USE_DEMO_WIDGETS
 bool g_button_pressed = false;
 bool set_dd_pressed = false;
 bool get_dd_pressed = false;
-char selected_option[64] = {0};
 
 int grl_uart_write(uart_port_t uart_num, const void* src, size_t size)
 {
@@ -237,7 +239,7 @@ static void setup_systeminfo_panel(lv_obj_t * parent){
     lv_obj_add_style(ip_add_label, &style_text_muted, 0);
 
     lv_obj_t * eload_ver_text_label = lv_label_create(system_info_panel);
-    lv_label_set_text(eload_ver_text_label, "E-Load Version");
+    lv_label_set_text(eload_ver_text_label, "E-Load/PPS Version");
     lv_obj_add_style(eload_ver_text_label, &style_text_muted, 0);
 
     lv_obj_t * eload_ver_divider = lv_label_create(system_info_panel);
@@ -245,7 +247,7 @@ static void setup_systeminfo_panel(lv_obj_t * parent){
     lv_obj_add_style(eload_ver_divider, &style_text_muted, 0);
 
     lv_obj_t * eload_ver_num_label = lv_label_create(system_info_panel);
-    lv_label_set_text(eload_ver_num_label, "x.y.z");
+    lv_label_set_text(eload_ver_num_label, "x.y / a.b");
     lv_obj_add_style(eload_ver_num_label, &style_text_muted, 0);
 
     if(disp_size == DISP_LARGE) {
@@ -330,9 +332,9 @@ void setup_portstatus_Panel(lv_obj_t * parent)
     lv_obj_t * port_status_panel = lv_obj_create(parent);
     lv_obj_set_height(port_status_panel, LV_SIZE_CONTENT);
 
-    lv_obj_t * tap3_panel1_tittle = lv_label_create(port_status_panel);
-    lv_label_set_text(tap3_panel1_tittle, "Port Status");
-    lv_obj_add_style(tap3_panel1_tittle, &style_title, 0);
+    lv_obj_t * prt_sts_panel = lv_label_create(port_status_panel);
+    lv_label_set_text(prt_sts_panel, "Port Status");
+    lv_obj_add_style(prt_sts_panel, &style_title, 0);
 
     lv_obj_t * tester_port_role_label = lv_label_create(port_status_panel);
     lv_label_set_text(tester_port_role_label, "Tester Port Role");
@@ -424,7 +426,7 @@ void setup_portstatus_Panel(lv_obj_t * parent)
 
     lv_obj_set_grid_dsc_array(port_status_panel, grid_1_col_dsc, grid_1_row_dsc);
 
-    lv_obj_set_grid_cell(tap3_panel1_tittle, LV_GRID_ALIGN_START, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
+    lv_obj_set_grid_cell(prt_sts_panel, LV_GRID_ALIGN_START, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
 
     lv_obj_set_grid_cell(tester_port_role_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_grid_cell(separator1, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
@@ -707,9 +709,22 @@ static void analytics_profile_create(lv_obj_t * parent)
 
 void port_status_info(lv_obj_t * parent)
 {
-    lv_obj_t * tap3_panel1_tittle = lv_label_create(parent);
-    lv_label_set_text(tap3_panel1_tittle, "Port Status");
-    lv_obj_add_style(tap3_panel1_tittle, &style_title, 0);
+    
+    lv_obj_t * msg_sts_label = lv_label_create(parent);
+    lv_label_set_text(msg_sts_label, "Message Status : ");
+    lv_obj_align(msg_sts_label, LV_ALIGN_TOP_MID, 0, 0);  // Position label at the top
+    lv_obj_add_style(msg_sts_label, &style_title, 0);
+
+    // Create the label below the heading to show dynamic status
+    lv_obj_t * Tx_cmd_label = lv_label_create(parent);
+    lv_label_set_text(Tx_cmd_label, "Waiting for command to send...\n");  // Initial text
+    lv_obj_align_to(Tx_cmd_label, msg_sts_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -10);  // Position below heading
+
+    // Create the label below the heading to show dynamic status
+    lv_obj_t * Rx_cmd_label = lv_label_create(parent);
+    lv_label_set_text(Rx_cmd_label, "Data Received from tester : ");  // Initial text
+    lv_obj_align_to(Rx_cmd_label, panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -20);  // Position below heading
+    
 #if 0
     lv_obj_t * tester_port_role_label = lv_label_create(parent);
     lv_label_set_text(tester_port_role_label, "Tester Port Role");
@@ -800,7 +815,12 @@ void port_status_info(lv_obj_t * parent)
 
     lv_obj_set_grid_dsc_array(parent, grid_1_col_dsc, grid_1_row_dsc);
 
-    lv_obj_set_grid_cell(tap3_panel1_tittle, LV_GRID_ALIGN_START, 0, 3, LV_GRID_ALIGN_CENTER, 0, 1);
+    lv_obj_set_grid_cell(msg_sts_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 1, 1);
+    lv_obj_set_grid_cell(Tx_cmd_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 2, 1);
+    lv_obj_set_grid_cell(Rx_cmd_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 3, 1);
+    
+    panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label = Tx_cmd_label;
+    panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Rx_cmd_label = Rx_cmd_label;
 #if 0
     lv_obj_set_grid_cell(tester_port_role_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_grid_cell(separator1, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
@@ -873,7 +893,7 @@ void packet_select_info(lv_obj_t * parent)
 void port_control_tab(lv_obj_t * parent)
 {
     static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT,LV_GRID_CONTENT,LV_GRID_TEMPLATE_LAST};
     lv_obj_set_grid_dsc_array(parent, grid_main_col_dsc, grid_main_row_dsc);
 
     lv_obj_t * packet_select_panel = lv_obj_create(parent);
@@ -882,7 +902,7 @@ void port_control_tab(lv_obj_t * parent)
     packet_select_info(packet_select_panel);
 
     lv_obj_t * port_status_panel = lv_obj_create(parent);
-    lv_obj_set_height(port_status_panel, LV_SIZE_CONTENT);
+    lv_obj_set_height(port_status_panel, LV_VER_RES);
     lv_obj_set_grid_cell(port_status_panel, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_START, 0, 1);
     port_status_info(port_status_panel);
 }
@@ -1196,14 +1216,13 @@ void pop_ui_log(_rx_queue_struct_t rx_struct){
 
 // #endif/**PUSH_TO_UI*/
 }
+#if 0
 #define SOP_INDEX	0
 #define PAYLOAD_INDEX	2
 #define RX_CHUNK_SIZE 32
 #define MAX_MESSAGE_SIZE 255
 #define MESSAGE_TIMEOUT 1    // Timeout in seconds
 #define MESSAGE_TIMEOUT_mS 250    // Timeout in milli seconds
-#define SOP ';'             // Start of Packet marker
-#define EOP ';'
 
 typedef struct {
     uint8_t rxbuffer[MAX_MESSAGE_SIZE];
@@ -1226,6 +1245,7 @@ long long current_time_ms() {
     clock_gettime(CLOCK_REALTIME, &ts);
     return (long long)(ts.tv_sec) * 1000 + (ts.tv_nsec) / 1000000;
 }
+#endif
 void uart_read()
 {
     int index = 0;
@@ -1435,12 +1455,100 @@ void process_polling_cmd(uint8_t *aPollBuff){
     }
 }
 
-void process_get_cmd(uint8_t *aPollBuff)
-{
+void populate_fw_v_fetch(uint8_t *aPollBuff){
+    
+    uint8_t rx_fw_v[12] = {0};
+    uint8_t size = 0;
+    String output = " "; // Allocate enough space for the version string
+    // Start the version string with "FW_V_"
+    output = "FW_V_";
+    uint8_t array_index = 5;
+    if(aPollBuff[array_index++] == 0xF1){//5th index
+        
+        size = aPollBuff[array_index++];//6th index
+        memcpy(rx_fw_v, &aPollBuff[array_index],size);//frm 7th
+        array_index = array_index + size;//7+size = 7+3=10
+        // Iterate through the array and add each element to the version string
+        for (int i = 0; i < size; i++) {
+            // Convert the current number to string
+            output += String(rx_fw_v[i]);
 
+            // Add a period unless it's the last number
+            if (i != size - 1) {
+                output += ".";
+            }
+        }
+    
+    // output.toCharArray(fw_version, sizeof(fw_version)); //copying received value to actual value
+        
+        lv_label_set_text(panel_obj_p->over_view_tab_s.sys_info_panel->fw_ver_num_label, (output).c_str());
+        delay(2);
+        lv_obj_invalidate(panel_obj_p->over_view_tab_s.sys_info_panel->fw_ver_num_label);  // Invalidate the button to refresh the UI
+    }
+    
+    if(aPollBuff[array_index++] == 0xF2){//10th index
+    
+        size = aPollBuff[array_index++];//11th index
+        memcpy(rx_fw_v, &aPollBuff[array_index],size);//frm 12th
+        array_index = array_index + size;//12+size = 12+2=14
+        output = " ";
+        char buffer[50];
+        // Use sprintf to format the version string into the buffer
+        sprintf(buffer, "%d.%d / %d.%d", rx_fw_v[0], rx_fw_v[1], rx_fw_v[2], rx_fw_v[3]);
 
+         // Convert the char buffer to a String
+        output = String(buffer);
+        
+        lv_label_set_text(panel_obj_p->over_view_tab_s.sys_info_panel->eload_ver_num_label, (output).c_str());
+        delay(2);
+        lv_obj_invalidate(panel_obj_p->over_view_tab_s.sys_info_panel->eload_ver_num_label);  // Invalidate the button to refresh the UI
+   
+    }
+    
 }
 
+void process_system_specific(uint8_t *aPollBuff)
+{
+    switch(aPollBuff[4]){
+        case 0x01://get fw version
+            populate_fw_v_fetch(aPollBuff);
+        break;
+        case 0x02:// get fram version
+
+        break;
+    }
+
+}
+void process_protocol_specific(uint8_t *aPollBuff)
+{
+    switch(aPollBuff[4]){
+        case 0x01://get dut src caps
+            
+        break;
+        case 0x02://get tester caps
+
+        break;
+        case 0x03://get pdc info
+
+        break;
+        case 0x04://get vbus info
+
+        break;
+        case 0x05://get vconn info
+
+        break;
+    }
+}
+void process_get_cmd(uint8_t *aPollBuff){
+
+    switch(aPollBuff[3]){
+        case 0x00://get system specific
+            process_system_specific(aPollBuff);
+        break;
+        case 0x05://get protocol specific
+        break;
+    }
+}
 void process_app_cmd(_rx_queue_struct_t rx_struct)
 {
 #ifdef GRL_DBG_LEVEL_1

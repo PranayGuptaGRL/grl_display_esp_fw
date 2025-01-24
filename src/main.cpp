@@ -3,7 +3,7 @@
 #include "DisplayApp.h"
 #include "grl_apis.h"
 
-#define BOOTING_SCREEN
+// #define BOOTING_SCREEN
 
 #ifdef BOOTING_SCREEN
 // #define PROGRESS_BAR //BOOTING,
@@ -175,14 +175,18 @@ void boot_time_uart_task(void *pvParameters) {
 
 void grl_init(){
   memset(panel_obj_p, 0, sizeof(panel_obj_t));
+  
   // Assign the addresses of the static instances to the pointers
   panel_obj_p->over_view_tab_s.sys_info_panel = &sys_info_panel_instance;
   panel_obj_p->over_view_tab_s.port_sts_panel = &port_sts_panel_instance;
   panel_obj_p->log_tab_s.log_panel = &log_panel_instance;
+  panel_obj_p->port_ctrl_tab_s.msg_sts_panel = &msg_panel_instance;
+
   // Initialize the nested structures
   memset(panel_obj_p->over_view_tab_s.sys_info_panel, 0, sizeof(sys_info_panel_t));
   memset(panel_obj_p->over_view_tab_s.port_sts_panel, 0, sizeof(port_sts_panel_t));
   memset(panel_obj_p->log_tab_s.log_panel, 0, sizeof(log_panel_t));
+  memset(panel_obj_p->port_ctrl_tab_s.msg_sts_panel, 0, sizeof(msg_sts_panel_t));
 
   init_get_cmds_fp();
   init_set_cmd_fp();

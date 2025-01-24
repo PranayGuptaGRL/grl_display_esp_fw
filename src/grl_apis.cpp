@@ -72,6 +72,20 @@ int dd_get_vconn_data_init(get_dd_button_e abutton_sel){
     return grl_uart_write(UART_NUM_0, dd_get_api[abutton_sel],dd_get_api_lengths[abutton_sel]);
 }
 
+int dd_get_testercaps_data_init(get_dd_button_e abutton_sel){
+#ifdef GRL_DBG_LEVEL_1
+    Serial.println(__FUNCTION__);
+#endif
+    return grl_uart_write(UART_NUM_0, dd_get_api[abutton_sel],dd_get_api_lengths[abutton_sel]);
+}
+
+int dd_get_fram_data_init(get_dd_button_e abutton_sel){
+#ifdef GRL_DBG_LEVEL_1
+    Serial.println(__FUNCTION__);
+#endif
+    return grl_uart_write(UART_NUM_0, dd_get_api[abutton_sel],dd_get_api_lengths[abutton_sel]);
+}
+
 void init_set_cmd_fp()
 {
     set_cmds_fp[DD_ATTACH_SET] = dd_attach_api_init;
@@ -86,4 +100,7 @@ void init_get_cmds_fp()
     get_cmds_fp[DD_GET_PDC_DETAILS] = dd_get_pdc_dets_init;
     get_cmds_fp[DD_GET_VBUS_DATA] = dd_get_vbus_data_init;
     get_cmds_fp[DD_GET_VCONN_DATA] = dd_get_vconn_data_init;
+    get_cmds_fp[DD_GET_TESTER_CAPS] = dd_get_testercaps_data_init;
+    get_cmds_fp[DD_GET_FRAM_DATA] = dd_get_fram_data_init;
+
 }

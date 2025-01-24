@@ -2,6 +2,27 @@
 #include "callbacks.h"
 #include "DisplayApp.h"
 #include"grl_apis.h"
+
+char lbuf[255] = "";
+char selected_option[32] = {0};
+
+void append_data(char *selected_option){
+        char new_status[40];  // Temporary string to hold the new entry
+        snprintf(new_status, sizeof(new_status), "Sent: \"%s\"\n", selected_option);  // Format the new text
+        
+        // Calculate remaining space in the status buffer
+        // size_t current_len = strlen(lbuf);
+        // size_t new_entry_len = strlen(new_status);
+        // size_t max_len = sizeof(lbuf) - 1;  // Leave space for the null terminator
+
+        // Check if the new entry fits
+        if (strlen(lbuf) + strlen(new_status) <= (sizeof(lbuf) - 1)){// Leave space for the null terminator
+            // Append the new message to the global status array
+            strncat(lbuf, new_status, sizeof(lbuf) - strlen(lbuf)  - 1);  // Append while preventing overflow
+        }else{
+            snprintf(lbuf, sizeof(lbuf), "Sent: \"%s\"\n", selected_option);  // Format the text
+        }
+}
 // Function triggered when dropdown value changes
 void get_dd_cb_handler(lv_event_t *e) {
     if (e == NULL){
@@ -16,10 +37,13 @@ void get_dd_cb_handler(lv_event_t *e) {
     }
     get_dd_button_e selected_id = (get_dd_button_e)lv_dropdown_get_selected(dropdown);
 
+    // char lbuf[200] = {0};
     // Fetch selected text
     if(code == LV_EVENT_VALUE_CHANGED) {
         get_dd_pressed = true;
         lv_dropdown_get_selected_str(dropdown, selected_option, sizeof(selected_option));
+        append_data(selected_option);
+        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(lbuf).c_str());  // Update the text in the port status panel
     }
     else{
         return;
@@ -68,12 +92,13 @@ void set_dd_cb_handler(lv_event_t *e) {
         return; // Ensure dropdown is valid
     }
     set_dd_button_e selected_id = (set_dd_button_e)lv_dropdown_get_selected(dropdown);
-    
+
     // Fetch selected text
-    // char selected_option[64];
     if(code == LV_EVENT_VALUE_CHANGED) {
         set_dd_pressed = true;
         lv_dropdown_get_selected_str(dropdown, selected_option, sizeof(selected_option));
+        append_data(selected_option);
+        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(lbuf).c_str());  // Update the text in the port status panel
     }
     else{
         return;

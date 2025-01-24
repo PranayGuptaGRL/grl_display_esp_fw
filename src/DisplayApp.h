@@ -33,7 +33,7 @@ extern bool g_button_pressed;
 extern bool set_dd_pressed;
 extern bool get_dd_pressed;
 
-extern char selected_option[64];
+// extern char selected_option[128];
 
 // extern lv_obj_t * GrlMainTab;
 // extern lv_obj_t * OverViewTab;
@@ -46,7 +46,8 @@ extern char selected_option[64];
 // extern lv_obj_t * tap4_panel2_tittle;
 // extern lv_obj_t * system_info_panel;
 // extern lv_obj_t * fw_ver_num_label;
-
+// extern lv_obj_t * tap3_panel1_tittle1;
+// extern lv_obj_t * op_panel;
 
 //Display Sizes
 static disp_size_t disp_size;

@@ -3,6 +3,8 @@ panel_obj_t g_panel_objs = {0};
 sys_info_panel_t sys_info_panel_instance = {0};
 port_sts_panel_t port_sts_panel_instance = {0};
 log_panel_t log_panel_instance = {0};
+msg_sts_panel_t msg_panel_instance = {0};
+
 panel_obj_t *panel_obj_p = &g_panel_objs;
 uint8_t uart_rx_buf[512] = {0};
 uint8_t bytex_rx = 0;

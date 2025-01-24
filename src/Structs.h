@@ -46,6 +46,10 @@ typedef struct log_panel_struct{
     lv_obj_t * fw_logging_label;
 }log_panel_t;
 
+typedef struct msg_sts_panel_struct{
+    lv_obj_t * Tx_cmd_label;
+    lv_obj_t * Rx_cmd_label;
+}msg_sts_panel_t;
 
 typedef struct dynamic_panel_objects{
     
@@ -64,6 +68,7 @@ typedef struct dynamic_panel_objects{
     
     struct{
         lv_obj_t * prt_ctrl_tab;
+        msg_sts_panel_t * msg_sts_panel;
     }port_ctrl_tab_s;
 
     struct{
@@ -92,6 +97,8 @@ typedef enum{
     DD_GET_PDC_DETAILS = 2,
     DD_GET_VBUS_DATA   =3,
     DD_GET_VCONN_DATA   =4,
+    DD_GET_TESTER_CAPS =5,
+    DD_GET_FRAM_DATA   = 6,
 }get_dd_button_e;
 
 typedef enum{
@@ -118,6 +125,7 @@ extern LGFX lcd;
 extern sys_info_panel_t sys_info_panel_instance;
 extern port_sts_panel_t port_sts_panel_instance;
 extern log_panel_t log_panel_instance;
+extern msg_sts_panel_t msg_panel_instance;
 
 extern panel_obj_t *panel_obj_p;
 extern uint8_t uart_rx_buf[512];
