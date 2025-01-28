@@ -5,7 +5,7 @@
 #define VOLTAGE_PLOT
 #define CURRENT_PLOT
 #define STR_USE
-
+#define ABOUT_TAB
 #define TXD_PIN     GPIO_NUM_44
 #define RXD_PIN     GPIO_NUM_43
 
@@ -31,6 +31,7 @@
                         "Get Vbus Data\n"   \
                         "Get Vconn Data\n"    \
                         "Get Tester srccaps\n" \
-                        "Get FRAM data\n"
+                        "Get FRAM data\n"   \
+                        "Get IP Address\n"
 #endif // DEFINES_H
 

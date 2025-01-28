@@ -99,6 +99,7 @@ typedef enum{
     DD_GET_VCONN_DATA   =4,
     DD_GET_TESTER_CAPS =5,
     DD_GET_FRAM_DATA   = 6,
+    DD_GET_IP_ADDR  = 7,
 }get_dd_button_e;
 
 typedef enum{

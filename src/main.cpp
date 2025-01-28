@@ -175,7 +175,7 @@ void boot_time_uart_task(void *pvParameters) {
 
 void grl_init(){
   memset(panel_obj_p, 0, sizeof(panel_obj_t));
-  
+
   // Assign the addresses of the static instances to the pointers
   panel_obj_p->over_view_tab_s.sys_info_panel = &sys_info_panel_instance;
   panel_obj_p->over_view_tab_s.port_sts_panel = &port_sts_panel_instance;
@@ -190,6 +190,7 @@ void grl_init(){
 
   init_get_cmds_fp();
   init_set_cmd_fp();
+  // setup_styles();
 }
 
 void grl_timer_init(){

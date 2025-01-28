@@ -18,6 +18,9 @@ void my_disp_flush(lv_disp_drv_t *disp, const lv_area_t *area, lv_color_t *color
 void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data);
 void grl_display_init(void);
 int grl_uart_write(uart_port_t uart_num, const void* src, size_t size);
+// void setup_styles();
+// extern lv_style_t style_bold;
+// extern lv_style_t style_normal;
 
 const char Polling_API[] = {0x13,0x01,0x00,0x01};
 const char fw_version[] = "FW_V_1.0.0";
@@ -29,7 +32,7 @@ static lv_disp_draw_buf_t draw_buf;
 static lv_color_t disp_draw_buf[800 * 480 / 10];
 //static lv_color_t disp_draw_buf;
 static lv_disp_drv_t disp_drv;
-extern bool g_button_pressed;
+extern bool g_start_button_pressed;
 extern bool set_dd_pressed;
 extern bool get_dd_pressed;
 

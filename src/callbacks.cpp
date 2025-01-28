@@ -1,9 +1,10 @@
 
 #include "callbacks.h"
 #include "DisplayApp.h"
-#include"grl_apis.h"
+#include "grl_apis.h"
+#include "grl_timers.h"
 
-char lbuf[255] = "";
+char msg_sts_buf[1024] = " ";
 char selected_option[32] = {0};
 
 void append_data(char *selected_option){
@@ -16,11 +17,11 @@ void append_data(char *selected_option){
         // size_t max_len = sizeof(lbuf) - 1;  // Leave space for the null terminator
 
         // Check if the new entry fits
-        if (strlen(lbuf) + strlen(new_status) <= (sizeof(lbuf) - 1)){// Leave space for the null terminator
+        if (strlen(msg_sts_buf) + strlen(new_status) <= (sizeof(msg_sts_buf) - 1)){// Leave space for the null terminator
             // Append the new message to the global status array
-            strncat(lbuf, new_status, sizeof(lbuf) - strlen(lbuf)  - 1);  // Append while preventing overflow
+            strncat(msg_sts_buf, new_status, sizeof(msg_sts_buf) - strlen(msg_sts_buf)  - 1);  // Append while preventing overflow
         }else{
-            snprintf(lbuf, sizeof(lbuf), "Sent: \"%s\"\n", selected_option);  // Format the text
+            snprintf(msg_sts_buf, sizeof(msg_sts_buf), "Sent: \"%s\"\n", selected_option);  // Format the text
         }
 }
 // Function triggered when dropdown value changes
@@ -43,7 +44,10 @@ void get_dd_cb_handler(lv_event_t *e) {
         get_dd_pressed = true;
         lv_dropdown_get_selected_str(dropdown, selected_option, sizeof(selected_option));
         append_data(selected_option);
-        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(lbuf).c_str());  // Update the text in the port status panel
+        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(msg_sts_buf).c_str());  // Update the text in the port status panel
+        // lv_obj_add_style(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, &style_bold, 0);  // Bold style for sent commands
+        lv_obj_invalidate(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label);  // Invalidate the button to refresh the UI
+
     }
     else{
         return;
@@ -98,7 +102,8 @@ void set_dd_cb_handler(lv_event_t *e) {
         set_dd_pressed = true;
         lv_dropdown_get_selected_str(dropdown, selected_option, sizeof(selected_option));
         append_data(selected_option);
-        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(lbuf).c_str());  // Update the text in the port status panel
+        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(msg_sts_buf).c_str());  // Update the text in the port status panel
+        lv_obj_invalidate(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label);  // Invalidate the button to refresh the UI
     }
     else{
         return;
@@ -212,8 +217,42 @@ void color_event_cb(lv_event_t * e)
 void button1_event_cb(lv_event_t *e) {
     lv_event_code_t code = lv_event_get_code(e);
     if (code == LV_EVENT_CLICKED) {
-        g_button_pressed = true;
+        // g_start_button_pressed = true;
         // Serial.println("Button 1 Pressed");
         // Perform actions for Button 1
+    }
+}
+
+
+void start_button_cb(lv_event_t *e){
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_CLICKED) {
+        g_start_button_pressed = true;
+        // BaseType_t high_task_awoken = pdFALSE;
+        xTimerStart(timer_1, pdMS_TO_TICKS(50));//50 mS timer start
+        strcpy(selected_option,"Plot Started"); 
+        append_data(selected_option);
+        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(msg_sts_buf).c_str());  // Update the text in the port status panel
+        // lv_obj_add_style(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, &style_bold, 0);  // Bold style for sent commands
+        lv_obj_invalidate(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label);  // Invalidate the button to refresh the UI
+        // Serial.printf("started\n");
+    }
+
+}
+
+void stop_button_cb(lv_event_t *e){
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code == LV_EVENT_CLICKED) {
+        g_start_button_pressed = false;
+        BaseType_t high_task_awoken = pdFALSE;
+        xTimerStopFromISR( timer_1, &high_task_awoken );
+        
+        strcpy(selected_option,"Plot Stopped"); 
+        append_data(selected_option);
+        lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(msg_sts_buf).c_str());  // Update the text in the port status panel
+        // lv_obj_add_style(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, &style_bold, 0);  // Bold style for sent commands
+        lv_obj_invalidate(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label);  // Invalidate the button to refresh the UI
+        // Serial.printf("Stopped\n");
+
     }
 }

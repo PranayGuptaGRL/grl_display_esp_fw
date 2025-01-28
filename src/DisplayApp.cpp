@@ -13,9 +13,27 @@ int dbg = 0;
 // lv_obj_t * AnalysisTab;
 
 #if !LV_USE_DEMO_WIDGETS
-bool g_button_pressed = false;
+bool g_start_button_pressed = false;
 bool set_dd_pressed = false;
 bool get_dd_pressed = false;
+
+void update_opmsg_status(String output){
+    
+    char new_status[128];  // Temporary string to hold the new entry
+    snprintf(new_status, sizeof(new_status), "Rx: \"%s\"\n", output);  // Format the new text
+    // Check if the new entry fits
+    if (strlen(msg_sts_buf) + strlen(new_status) <= (sizeof(msg_sts_buf) - 1)){// Leave space for the null terminator
+        // Append the new message to the global status array
+        strncat(msg_sts_buf, new_status, sizeof(msg_sts_buf) - strlen(msg_sts_buf)  - 1);  // Append while preventing overflow
+    }else{
+        snprintf(msg_sts_buf, sizeof(msg_sts_buf), "Rx: \"%s\"\n", output);  // Format the text
+    }
+    lv_label_set_text(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, String(msg_sts_buf).c_str());  // Update the text in the port status panel
+    // lv_obj_add_style(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, &style_normal, 0);  // Bold style for sent commands
+
+    lv_obj_invalidate(panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label);  // Invalidate the button to refresh the UI
+
+}
 
 int grl_uart_write(uart_port_t uart_num, const void* src, size_t size)
 {
@@ -659,7 +677,7 @@ void current_chart_create(lv_obj_t * parent)
     lv_obj_set_grid_dsc_array(chart2_cont, grid_chart_col_dsc, grid_chart_row_dsc);
 
     lv_obj_t * title = lv_label_create(chart2_cont);
-    lv_label_set_text(title, "Current Plot in mA");
+    lv_label_set_text(title, "Vbus Current Plot in A");
     lv_obj_add_style(title, &style_title, 0);
     lv_obj_set_grid_cell(title, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 0, 1);
 
@@ -686,7 +704,7 @@ void current_chart_create(lv_obj_t * parent)
     else if(disp_size == DISP_LARGE) {
         lv_obj_set_style_pad_gap(current_chart, 16, 0);
     }
-    pow_axis = lv_chart_add_series(current_chart, lv_theme_get_color_primary(voltage_chart), LV_CHART_AXIS_PRIMARY_Y);
+    pow_axis = lv_chart_add_series(current_chart, lv_theme_get_color_primary(current_chart), LV_CHART_AXIS_PRIMARY_Y);
     lv_chart_set_next_value(current_chart, pow_axis, lv_rand(10, 80));
     lv_chart_set_next_value(current_chart, pow_axis, lv_rand(10, 80));
     lv_chart_set_next_value(current_chart, pow_axis, lv_rand(10, 80));
@@ -720,11 +738,7 @@ void port_status_info(lv_obj_t * parent)
     lv_label_set_text(Tx_cmd_label, "Waiting for command to send...\n");  // Initial text
     lv_obj_align_to(Tx_cmd_label, msg_sts_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -10);  // Position below heading
 
-    // Create the label below the heading to show dynamic status
-    lv_obj_t * Rx_cmd_label = lv_label_create(parent);
-    lv_label_set_text(Rx_cmd_label, "Data Received from tester : ");  // Initial text
-    lv_obj_align_to(Rx_cmd_label, panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label, LV_ALIGN_OUT_BOTTOM_MID, 0, -20);  // Position below heading
-    
+   
 #if 0
     lv_obj_t * tester_port_role_label = lv_label_create(parent);
     lv_label_set_text(tester_port_role_label, "Tester Port Role");
@@ -817,10 +831,8 @@ void port_status_info(lv_obj_t * parent)
 
     lv_obj_set_grid_cell(msg_sts_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 1, 1);
     lv_obj_set_grid_cell(Tx_cmd_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 2, 1);
-    lv_obj_set_grid_cell(Rx_cmd_label, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_START, 3, 1);
     
     panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Tx_cmd_label = Tx_cmd_label;
-    panel_obj_p->port_ctrl_tab_s.msg_sts_panel->Rx_cmd_label = Rx_cmd_label;
 #if 0
     lv_obj_set_grid_cell(tester_port_role_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_grid_cell(separator1, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
@@ -889,11 +901,39 @@ void packet_select_info(lv_obj_t * parent)
     /**Creating dropdwown for get commands */
     get_dd_config_handler(parent);
 }
+void plot_ctrl_panel_cfg(lv_obj_t * parent){
+    lv_obj_t * window_name_label = lv_label_create(parent);
+    lv_label_set_text(window_name_label, "Plot ctrl window");
+    lv_obj_add_style(window_name_label, &style_title, 0);
+    static lv_coord_t grid_col_dsc[] = {LV_GRID_FR(1),LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t grid_row_dsc[] = {
+            LV_GRID_CONTENT,  /*Title*/
+            LV_GRID_CONTENT,
+            LV_GRID_CONTENT,
+            LV_GRID_TEMPLATE_LAST
+    };
+    lv_obj_set_grid_dsc_array(parent, grid_col_dsc, grid_row_dsc);
+    lv_obj_set_grid_cell(window_name_label, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+ 
+    lv_obj_t * btn1 = lv_btn_create(parent);
+    lv_obj_t * btn1_label = lv_label_create(btn1);
+    lv_label_set_text(btn1_label, "Start");
+    lv_obj_set_grid_cell(btn1, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_add_event_cb(btn1, start_button_cb, LV_EVENT_CLICKED, NULL);
 
+    lv_obj_t * btn2 = lv_btn_create(parent);
+    lv_obj_t * btn2_label = lv_label_create(btn2);
+    lv_label_set_text(btn2_label, "Stop");
+    lv_obj_set_grid_cell(btn2, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_add_event_cb(btn2, stop_button_cb, LV_EVENT_CLICKED, NULL);
+
+
+}
 void port_control_tab(lv_obj_t * parent)
 {
     static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT,LV_GRID_CONTENT,LV_GRID_TEMPLATE_LAST};
+    // static lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT,LV_GRID_CONTENT,LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT,LV_GRID_CONTENT,LV_GRID_TEMPLATE_LAST};
     lv_obj_set_grid_dsc_array(parent, grid_main_col_dsc, grid_main_row_dsc);
 
     lv_obj_t * packet_select_panel = lv_obj_create(parent);
@@ -901,10 +941,15 @@ void port_control_tab(lv_obj_t * parent)
     lv_obj_set_grid_cell(packet_select_panel, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_START, 0, 1);
     packet_select_info(packet_select_panel);
 
-    lv_obj_t * port_status_panel = lv_obj_create(parent);
-    lv_obj_set_height(port_status_panel, LV_VER_RES);
-    lv_obj_set_grid_cell(port_status_panel, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_START, 0, 1);
-    port_status_info(port_status_panel);
+    lv_obj_t * plot_ctrl_panel = lv_obj_create(parent);
+    lv_obj_set_height(plot_ctrl_panel, LV_SIZE_CONTENT);
+    lv_obj_set_grid_cell(plot_ctrl_panel, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+    plot_ctrl_panel_cfg(plot_ctrl_panel);
+
+    lv_obj_t * msg_status_panel = lv_obj_create(parent);
+    lv_obj_set_height(msg_status_panel, LV_VER_RES);
+    lv_obj_set_grid_cell(msg_status_panel, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_START, 0, 2);
+    port_status_info(msg_status_panel);
 }
 
 void log_features_info(lv_obj_t * parent)
@@ -982,6 +1027,70 @@ void log_tab_create(lv_obj_t * parent)
 
     log_features_info(panel_obj_p->log_tab_s.log_panel->log_panel_obj);
 }
+#ifdef ABOUT_TAB
+void product_overview_info(lv_obj_t * parent)
+{
+    lv_obj_t * tap4_panel1_tittle = lv_label_create(parent);
+    lv_label_set_text(tap4_panel1_tittle, "Product Overview");
+    lv_obj_add_style(tap4_panel1_tittle, &style_title, 0);
+
+    lv_obj_t * product_overview = lv_label_create(parent);
+    lv_obj_add_style(product_overview, &style_text_muted, 0);
+    lv_label_set_text(product_overview, "\t\tGRL USB Power Delivery (PD) Dual Role Power (DRP) & Data Loop Back Tester (GRL-V-DPWR) is designed to help test engineers meet demanding test requirements for USB Type-C® and USB Power Delivery (USB PD) hosts and devices. The solution’s test port supports loading and sourcing of a single 100W USB-C port, enabled by strong thermal airflow that enables continuous testing for longer periods of time. \n\n\t\tTesting can be complete in less than a few seconds through a singular setup, with an open API interface facilitating the use of the test engineers’ preferred software (C#, NI TestStand, Python, etc.). With an intuitive design and reliable performance within a wide range of environmental chambers, the GRL-V-DPWR can be counted upon for high volume production.");
+    lv_label_set_long_mode(product_overview, LV_LABEL_LONG_WRAP);
+
+    static lv_coord_t grid_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t grid_row_dsc[] = {
+            LV_GRID_CONTENT,  /*Title*/
+            LV_GRID_CONTENT,
+            LV_GRID_TEMPLATE_LAST
+    };
+
+    lv_obj_set_grid_dsc_array(parent, grid_col_dsc, grid_row_dsc);
+
+    lv_obj_set_grid_cell(tap4_panel1_tittle, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
+    lv_obj_set_grid_cell(product_overview, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+}
+void key_features_info(lv_obj_t * parent)
+{
+    lv_obj_t * tap4_panel2_tittle = lv_label_create(parent);
+    lv_label_set_text(tap4_panel2_tittle, "Key Features");
+    lv_obj_add_style(tap4_panel2_tittle, &style_title, 0);
+
+    lv_obj_t * key_features = lv_label_create(parent);
+    lv_obj_add_style(key_features, &style_text_muted, 0);
+    lv_label_set_text(key_features, "Supports the following specifications:\n\t\t1. USB PD 2.0 & PD 3.1 Programmable Power Supply (PPS) negotiation\n\t\t2. USB 2.0 and USB 3.2 data loopback testing\n\t\t3. Up to 100W of power loading and sourcing\n\t\t4. Up to 7.5W per port for VCONN power loading\n\t\t5. IR drop compensation through VBUS voltage sense line within the GRL Tester cable offers");
+    lv_label_set_long_mode(key_features, LV_LABEL_LONG_WRAP);
+
+    static lv_coord_t grid_col_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t grid_row_dsc[] = {
+            LV_GRID_CONTENT,  /*Title*/
+            LV_GRID_CONTENT,
+            LV_GRID_TEMPLATE_LAST
+    };
+
+    lv_obj_set_grid_dsc_array(parent, grid_col_dsc, grid_row_dsc);
+
+    lv_obj_set_grid_cell(tap4_panel2_tittle, LV_GRID_ALIGN_START, 0, 1, LV_GRID_ALIGN_START, 0, 1);
+    lv_obj_set_grid_cell(key_features, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_START, 1, 1);
+}
+void about_tab_create(lv_obj_t * parent)
+{
+    static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
+    lv_obj_set_grid_dsc_array(parent, grid_main_col_dsc, grid_main_row_dsc);
+
+    lv_obj_t * product_overview_panel = lv_obj_create(parent);
+    lv_obj_set_height(product_overview_panel, LV_SIZE_CONTENT);
+    lv_obj_set_grid_cell(product_overview_panel, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_STRETCH, 0, 1);
+    product_overview_info(product_overview_panel);
+
+    lv_obj_t * key_features_panel = lv_obj_create(parent);
+    lv_obj_set_height(key_features_panel, LV_SIZE_CONTENT);
+    lv_obj_set_grid_cell(key_features_panel, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 0, 1);
+    key_features_info(key_features_panel);
+}
+#endif /***ABOUT_TAB*/
 void grl_boot_screen_widgets(void){
     
   if(LV_HOR_RES <= 320) 
@@ -1107,19 +1216,25 @@ void grl_create_widgets(void){
       lv_obj_align_to(label, logo, LV_ALIGN_OUT_RIGHT_MID, 10, 0);
   }
 
-  panel_obj_p->over_view_tab_s.over_view_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Overview");
-  overview_profile_create(panel_obj_p->over_view_tab_s.over_view_tab);
-  
- 
-  panel_obj_p->analysis_tab_s.analysis_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Analysis");
-  analytics_profile_create(panel_obj_p->analysis_tab_s.analysis_tab);
-  
-//   lv_obj_t * lbl;
-  panel_obj_p->port_ctrl_tab_s.prt_ctrl_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Port Control");
-  port_control_tab(panel_obj_p->port_ctrl_tab_s.prt_ctrl_tab);
-  
-  panel_obj_p->log_tab_s.log_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Log");
-  log_tab_create(panel_obj_p->log_tab_s.log_tab);
+    panel_obj_p->over_view_tab_s.over_view_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Overview");
+    overview_profile_create(panel_obj_p->over_view_tab_s.over_view_tab);
+
+
+    panel_obj_p->analysis_tab_s.analysis_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Analysis");
+    analytics_profile_create(panel_obj_p->analysis_tab_s.analysis_tab);
+
+    panel_obj_p->port_ctrl_tab_s.prt_ctrl_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Port Control");
+    port_control_tab(panel_obj_p->port_ctrl_tab_s.prt_ctrl_tab);
+
+#ifdef ABOUT_TAB
+    lv_obj_t * about_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "About");
+    about_tab_create(about_tab);
+#endif /**ABOUT_TAB*/
+
+#ifdef LOG_TAB
+   panel_obj_p->log_tab_s.log_tab = lv_tabview_add_tab(panel_obj_p->grl_main_panel, "Log");
+   log_tab_create(panel_obj_p->log_tab_s.log_tab);
+#endif/***LOG_TAB*/
 
   color_changer_create(panel_obj_p->grl_main_panel);
 }
@@ -1175,16 +1290,18 @@ void my_touchpad_read(lv_indev_drv_t *indev_driver, lv_indev_data_t *data)
 void update()
 {
     uint32_t i;
-    memcpy(&debug[0],&debug[1],(4 * 24));
-    debug[24] = lv_rand(10, 80);
+    // memcpy(&debug[0],&debug[1],(4 * 24));
+    // debug[24] = lv_rand(10, 80);
 
-    for(i = 0; i < 25; i++) {
-        lv_chart_set_next_value(voltage_chart, volt_axis, debug[i]);
+    // for(i = 0; i < 25; i++) 
+    {
+        lv_chart_set_next_value(voltage_chart, volt_axis, (debug[0]/1000.0));
     }
 
-    for(i = 0; i < 12; i++) {
+    // for(i = 0; i < 12; i++) 
+    {
         // lv_chart_set_next_value(current_chart, curr_axis, lv_rand(10, 80));
-        lv_chart_set_next_value(current_chart, pow_axis, debug[i]);
+        lv_chart_set_next_value(current_chart, pow_axis, (debug[1]/1000.0));
     }
 }
 void pop_ui_log(_rx_queue_struct_t rx_struct){
@@ -1353,7 +1470,7 @@ void uart_read()
         //If data is available
         if(index > 0){
             _rx_queue_struct_t  rx_queue_struct;
-            rx_queue_struct.rx_buffer = uart_rx_buf;
+            rx_queue_struct.rx_buffer = &uart_rx_buf[1];
             rx_queue_struct.rx_buf_size = index;
             BaseType_t high_task_awoken = pdFALSE;
             xQueueSendFromISR(_rx_queue, &rx_queue_struct, &high_task_awoken);
@@ -1391,11 +1508,13 @@ uint8_t decode_vbus_poll_data(uint8_t *aPollBuff, uint8_t index){
     uint8_t payload_length = aPollBuff[index++];
     uint16_t lvbus_vol = (aPollBuff[index++] | (aPollBuff[index++] << 8)); 
     uint16_t lvbus_cur = (aPollBuff[index++] | (aPollBuff[index++] << 8));
-
+    debug[0] = lvbus_vol;
+    debug[1] = lvbus_cur;
     while(aPollBuff[index] != EOP)
         index++;//end delimiter
 
     index++; //End delimiter
+    update();
     return index;
 }
 
@@ -1428,11 +1547,11 @@ uint8_t decode_temp_poll_data(uint8_t *aPollBuff, uint8_t index){
 void process_polling_cmd(uint8_t *aPollBuff){
 
     uint8_t lIndex = 0;
-    ++lIndex;++lIndex;
-    uint8_t lpayloadlen = aPollBuff[lIndex++];//2nd index
-    uint8_t ldataindex = aPollBuff[lIndex++];//3rd
-    uint8_t lportid = aPollBuff[lIndex++];//4th
-    uint8_t ldatafieldscnt = aPollBuff[lIndex++];//5th
+    ++lIndex;
+    uint8_t lpayloadlen = aPollBuff[lIndex++];//1st index
+    uint8_t ldataindex = aPollBuff[lIndex++];//2nd
+    uint8_t lportid = aPollBuff[lIndex++];//3rd
+    uint8_t ldatafieldscnt = aPollBuff[lIndex++];//4th
     
     for(int i = 0; i< ldatafieldscnt; ++i){
     
@@ -1462,12 +1581,12 @@ void populate_fw_v_fetch(uint8_t *aPollBuff){
     String output = " "; // Allocate enough space for the version string
     // Start the version string with "FW_V_"
     output = "FW_V_";
-    uint8_t array_index = 5;
-    if(aPollBuff[array_index++] == 0xF1){//5th index
+    uint8_t array_index = 4;
+    if(aPollBuff[array_index++] == 0xF1){//4th index
         
-        size = aPollBuff[array_index++];//6th index
-        memcpy(rx_fw_v, &aPollBuff[array_index],size);//frm 7th
-        array_index = array_index + size;//7+size = 7+3=10
+        size = aPollBuff[array_index++];//5th index
+        memcpy(rx_fw_v, &aPollBuff[array_index],size);//frm 6th
+        array_index = array_index + size;//6+size = 6+3=9
         // Iterate through the array and add each element to the version string
         for (int i = 0; i < size; i++) {
             // Convert the current number to string
@@ -1484,13 +1603,18 @@ void populate_fw_v_fetch(uint8_t *aPollBuff){
         lv_label_set_text(panel_obj_p->over_view_tab_s.sys_info_panel->fw_ver_num_label, (output).c_str());
         delay(2);
         lv_obj_invalidate(panel_obj_p->over_view_tab_s.sys_info_panel->fw_ver_num_label);  // Invalidate the button to refresh the UI
+        
+        //printing data on output window
+        update_opmsg_status(output);
+
+    
     }
     
-    if(aPollBuff[array_index++] == 0xF2){//10th index
+    if(aPollBuff[array_index++] == 0xF2){//9th index
     
-        size = aPollBuff[array_index++];//11th index
-        memcpy(rx_fw_v, &aPollBuff[array_index],size);//frm 12th
-        array_index = array_index + size;//12+size = 12+2=14
+        size = aPollBuff[array_index++];//10th index
+        memcpy(rx_fw_v, &aPollBuff[array_index],size);//frm 11th
+        array_index = array_index + size;//11+size = 11+4=15
         output = " ";
         char buffer[50];
         // Use sprintf to format the version string into the buffer
@@ -1500,28 +1624,51 @@ void populate_fw_v_fetch(uint8_t *aPollBuff){
         output = String(buffer);
         
         lv_label_set_text(panel_obj_p->over_view_tab_s.sys_info_panel->eload_ver_num_label, (output).c_str());
-        delay(2);
         lv_obj_invalidate(panel_obj_p->over_view_tab_s.sys_info_panel->eload_ver_num_label);  // Invalidate the button to refresh the UI
-   
+        
+        //printing data on output window
+        update_opmsg_status(output);
     }
     
 }
 
+void populate_ip_addr(uint8_t *aPollBuff){
+    String output = " ";
+    uint8_t rx_fw_v[5] = {0};
+    if(aPollBuff[4] == ';'){
+        char buffer[50];
+        memcpy(rx_fw_v,&aPollBuff[5],4);//IP starts from 6th Byte
+        // Use sprintf to format the version string into the buffer
+        sprintf(buffer, "%d.%d.%d.%d", rx_fw_v[0], rx_fw_v[1], rx_fw_v[2], rx_fw_v[3]);
+        // Convert the char buffer to a String
+        output = String(buffer);
+
+        lv_label_set_text(panel_obj_p->over_view_tab_s.sys_info_panel->ip_add_label, (output).c_str());
+        // delay(2);
+        lv_obj_invalidate(panel_obj_p->over_view_tab_s.sys_info_panel->ip_add_label);  // Invalidate the button to refresh the UI
+        
+        //printing data on output window
+        update_opmsg_status(output);
+    }
+}
 void process_system_specific(uint8_t *aPollBuff)
 {
-    switch(aPollBuff[4]){
+    switch(aPollBuff[3]){
         case 0x01://get fw version
             populate_fw_v_fetch(aPollBuff);
         break;
         case 0x02:// get fram version
 
         break;
+        case 0x03://get IP address
+            populate_ip_addr(aPollBuff);
+        break;
     }
 
 }
 void process_protocol_specific(uint8_t *aPollBuff)
 {
-    switch(aPollBuff[4]){
+    switch(aPollBuff[3]){
         case 0x01://get dut src caps
             
         break;
@@ -1541,7 +1688,7 @@ void process_protocol_specific(uint8_t *aPollBuff)
 }
 void process_get_cmd(uint8_t *aPollBuff){
 
-    switch(aPollBuff[3]){
+    switch(aPollBuff[2]){
         case 0x00://get system specific
             process_system_specific(aPollBuff);
         break;
@@ -1554,8 +1701,10 @@ void process_app_cmd(_rx_queue_struct_t rx_struct)
 #ifdef GRL_DBG_LEVEL_1
     Serial.println(__FUNCTION__);
 #endif
+#ifdef LOG_TAB
     pop_ui_log(rx_struct);
-    switch( (cmd_type_e) rx_struct.rx_buffer[1] & 0x0F){
+#endif/**LOG_TAB**/
+    switch( (cmd_type_e) rx_struct.rx_buffer[0] & 0x0F){
         case POLL_CMD:
             process_polling_cmd(rx_struct.rx_buffer);
         break;
@@ -1577,12 +1726,14 @@ void uart_read_task(void *pvParameters)
     for (;;)
     {
         lv_timer_handler(); /* let the GUI do its work */
-        if(dbg++ == 25){
-            dbg = 0;
-            update();
+        // if(dbg++ == 25)
+        {
+            // dbg = 0;
+            // if(g_start_button_pressed)//update the chart only if plot ctrl is started
+            //     update();
         }
         uart_read();
-        // delay( 10 );
+        delay( 3 );
     }
 }
 void uart_write_task(void *pvParameters)

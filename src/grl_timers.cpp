@@ -25,9 +25,9 @@ uint8_t polling_buf[] = {';',0x13,0x02,0x00,0x01,';'};
 void Timer0_ISR(void *z )
 {
     size_t bytes_sent = 0;
-    if(g_button_pressed)
+    if(g_start_button_pressed)
     {
-        g_button_pressed = false;
+        // g_button_pressed = false;
         // for(int i =0; i<sizeof(polling_buf);i++){
         //     polling_buf[i] = i+1;
         // }
